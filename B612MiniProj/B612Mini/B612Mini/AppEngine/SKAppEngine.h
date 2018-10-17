@@ -1,36 +1,31 @@
-////
-////  SKAppEngine.h
-////  B612Mini
-////
-////  Created by JohnHong on 2018. 2. 12..
-////  Copyright © 2018년 Naver. All rights reserved.
-////
 //
-//#import <Foundation/Foundation.h>
-//#import <UIKit/UIKit.h>
-//#include <OpenGLES/ES2/gl.h>
-//#include <OpenGLES/ES2/glext.h>
-//#import <AVFoundation/AVFoundation.h>
+//  SKAppEngine.h
+//  B612Mini
 //
-//typedef NS_ENUM(NSInteger, SKRenderingState)
-//{
-//    SKRenderingStateUnknown = -1,
-//    SKRenderingStateUnInitialized = 0,
-//    SKRenderingStateRunning = 1,
-//    SKRenderingStatePause = 2,
-//};
+//  Created by hsg2510 on 2018. 10. 17..
+//  Copyright © 2018년 Naver. All rights reserved.
 //
-//@interface SKAppEngine : NSObject<AVCaptureVideoDataOutputSampleBufferDelegate>
-//
-//
-//@property (nonatomic, readonly) EAGLContext *context;
-//
-//+ (id)sharedAppEngine;
-//- (void)initApppEngineWithView:(UIView *)aView context:(EAGLContext *)aEAGLContext;
-//- (void)initCaptureSession;
-//- (void)requestRecording;
-//- (void)pauseEngine;
-//- (void)resumeEngine;
-//- (SKRenderingState)renderingState;
-//
-//@end
+
+#import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
+#include <OpenGLES/ES2/gl.h>
+#include <OpenGLES/ES2/glext.h>
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface SKAppEngine : NSObject
+
+@property (nonatomic, readonly) EAGLContext *context;
+@property (nonatomic, readonly) BOOL isStarted;
+
+
++ (id)sharedAppEngine;
+- (void)initWithContext:(EAGLContext *)aEAGLContext EAGLLayer:(CAEAGLLayer *)aLayer;
+- (void)setMainTextureWithPath:(char *)aPath;
+- (void)render;
+- (void)resumeEngine;
+- (void)pauseEngine;
+
+@end
+
+NS_ASSUME_NONNULL_END

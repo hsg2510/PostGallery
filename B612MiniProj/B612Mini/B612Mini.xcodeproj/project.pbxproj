@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		42A1682C2176FC91008D5F33 /* SKAppEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = 42A1682B2176FC91008D5F33 /* SKAppEngine.mm */; };
+		42A1682F217703A8008D5F33 /* res in Resources */ = {isa = PBXBuildFile; fileRef = 42A1682E217703A8008D5F33 /* res */; };
 		4D0C81A420A1BE9A001E6BB7 /* SKCustomRenderingView.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D0C81A320A1BE9A001E6BB7 /* SKCustomRenderingView.mm */; };
 		4D0C81A720A1BEED001E6BB7 /* SKCustomAppEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = 4D0C81A620A1BEED001E6BB7 /* SKCustomAppEngine.mm */; };
 		4D0C81AA20A1C3ED001E6BB7 /* CustomRenderingEngine.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4D0C81A820A1C3ED001E6BB7 /* CustomRenderingEngine.cpp */; };
@@ -348,6 +350,9 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		42A1682A2176FC91008D5F33 /* SKAppEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SKAppEngine.h; sourceTree = "<group>"; };
+		42A1682B2176FC91008D5F33 /* SKAppEngine.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SKAppEngine.mm; sourceTree = "<group>"; };
+		42A1682E217703A8008D5F33 /* res */ = {isa = PBXFileReference; lastKnownFileType = folder; path = res; sourceTree = "<group>"; };
 		4D0C81A220A1BE9A001E6BB7 /* SKCustomRenderingView.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SKCustomRenderingView.h; sourceTree = "<group>"; };
 		4D0C81A320A1BE9A001E6BB7 /* SKCustomRenderingView.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; path = SKCustomRenderingView.mm; sourceTree = "<group>"; };
 		4D0C81A520A1BEED001E6BB7 /* SKCustomAppEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SKCustomAppEngine.h; sourceTree = "<group>"; };
@@ -968,6 +973,7 @@
 		4D4C0F09202C769100495ECB = {
 			isa = PBXGroup;
 			children = (
+				42A1682E217703A8008D5F33 /* res */,
 				4D4C0F14202C769100495ECB /* B612Mini */,
 				4D4C0F2D202C769100495ECB /* B612MiniTests */,
 				4D4C0F13202C769100495ECB /* Products */,
@@ -1702,6 +1708,8 @@
 				4D8E33A02031CE760094CA84 /* SKRenderingCacheStorage.m */,
 				4D0C81A520A1BEED001E6BB7 /* SKCustomAppEngine.h */,
 				4D0C81A620A1BEED001E6BB7 /* SKCustomAppEngine.mm */,
+				42A1682A2176FC91008D5F33 /* SKAppEngine.h */,
+				42A1682B2176FC91008D5F33 /* SKAppEngine.mm */,
 			);
 			path = AppEngine;
 			sourceTree = "<group>";
@@ -1806,6 +1814,7 @@
 				4D707F46202F3537001805DC /* textured.frag in Resources */,
 				4D707F2D202F3537001805DC /* default-theme.psd in Resources */,
 				4D708027202F3538001805DC /* PhysicsRigidBody.inl in Resources */,
+				42A1682F217703A8008D5F33 /* res in Resources */,
 				4D49A28E2099E53900D58530 /* Shader.fsh in Resources */,
 				4D707F44202F3537001805DC /* terrain.frag in Resources */,
 				4D707F2F202F3537001805DC /* icon_16.ico in Resources */,
@@ -1966,6 +1975,7 @@
 				4D708010202F3538001805DC /* Mesh.cpp in Sources */,
 				4D708046202F3538001805DC /* Slider.cpp in Sources */,
 				4D708040202F3538001805DC /* SceneLoader.cpp in Sources */,
+				42A1682C2176FC91008D5F33 /* SKAppEngine.mm in Sources */,
 				4D70804A202F3538001805DC /* Terrain.cpp in Sources */,
 				4D708049202F3538001805DC /* Technique.cpp in Sources */,
 				4D707FAE202F3538001805DC /* lua_HeightField.cpp in Sources */,
@@ -2295,7 +2305,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				ONLY_ACTIVE_ARCH = NO;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.HelloArrow2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hsg2510.PostGallery;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_PNG_TEXT = NO;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -2328,7 +2338,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				MTL_ENABLE_DEBUG_INFO = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.yourcompany.HelloArrow2;
+				PRODUCT_BUNDLE_IDENTIFIER = com.hsg2510.PostGallery;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRIP_PNG_TEXT = NO;
 				TARGETED_DEVICE_FAMILY = 1;

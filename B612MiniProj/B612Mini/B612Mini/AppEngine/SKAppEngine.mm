@@ -2,40 +2,36 @@
 //  SKAppEngine.m
 //  B612Mini
 //
-//  Created by JohnHong on 2018. 2. 12..
+//  Created by hsg2510 on 2018. 10. 17..
 //  Copyright © 2018년 Naver. All rights reserved.
 //
 
 #import "SKAppEngine.h"
-#import "RenderingEngine.hpp"
+#import "CustomRenderingEngine.hpp"
 #import "SKQueueDispatcher.h"
-#import "SKRenderingCacheStorage.h"
+#import "Vector2.h"
+#import "Vector4.h"
+#include <vector>
 
 using namespace kuru;
 using namespace gameplay;
-
-
-static int32_t const kDefaultFrameRate = 30;
-
-const char* kCaptureVideoSessionQueueIdentifier = "captureVideoSessionQueueIdentifier";
-
+using namespace std;
 
 @implementation SKAppEngine
 {
     EAGLContext *mContext;
-    AVCaptureSession *mCaptureSession;
-    UIView *mRenderingView;
-    CGFloat mViewWidth;
-    CGFloat mViewHeight;
+    char *mMainTexturePath;
+    BOOL mShouldUpdateFrameBuffer;
+    BOOL mIsStarted;
     
-    dispatch_semaphore_t mVideoFrameRenderingSemaphore;
+    CAEAGLLayer *mLayer;
 }
 
-
 @synthesize context = mContext;
+@synthesize isStarted = mIsStarted;
 
 
-#pragma mark - init
+#pragma mark - init, dealloc
 
 
 + (id)sharedAppEngine
@@ -50,10 +46,6 @@ const char* kCaptureVideoSessionQueueIdentifier = "captureVideoSessionQueueIdent
     return sSharedAppEngine;
 }
 
-
-#pragma mark - override
-
-
 - (void)dealloc
 {
     if ([EAGLContext currentContext] == mContext)
@@ -66,183 +58,120 @@ const char* kCaptureVideoSessionQueueIdentifier = "captureVideoSessionQueueIdent
 #pragma mark - public
 
 
-- (void)initApppEngineWithView:(UIView *)aView context:(EAGLContext *)aEAGLContext
+- (void)initWithContext:(EAGLContext *)aEAGLContext EAGLLayer:(CAEAGLLayer *)aLayer
 {
-    mRenderingView = aView;
-    mContext = aEAGLContext;
-    
-    CGSize sViewSize = [mRenderingView bounds].size;
-    mViewWidth = sViewSize.width;
-    mViewHeight = sViewSize.height;
-    
-    NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingString:@"/"];
-    FileSystem::setResourcePath([bundlePath fileSystemRepresentation]);
-    
-//    CAEAGLLayer *sEaglLayer = (CAEAGLLayer *)[mRenderingView layer];
-//    NSDictionary *sDrawablePropertiesDict = [NSDictionary dictionaryWithObjectsAndKeys:[NSNumber numberWithBool:NO], kEAGLDrawablePropertyRetainedBacking, kEAGLColorFormatRGBA8, kEAGLDrawablePropertyColorFormat, nil];
-//    CGFloat sScreenScale = [[UIScreen mainScreen] scale];
-//    [sEaglLayer setOpaque:YES];
-//    [sEaglLayer setDrawableProperties:sDrawablePropertiesDict];
-//    [sEaglLayer setContentsScale:sScreenScale];
-//    [mRenderingView setContentScaleFactor:sScreenScale];
-    
-    RenderingEngine *sEngine = RenderingEngine::getInstance();
-    
-    sEngine->initPrevAllocFramebuffer();
-    
-    [mContext renderbufferStorage:GL_RENDERBUFFER fromDrawable:(CAEAGLLayer *)[mRenderingView layer]];
-    
-    sEngine->initializeForCustom();
-    sEngine->run();
-    
-    glActiveTexture(GL_TEXTURE0);
-}
-
-
-- (void)initCaptureSession
-{
-    mCaptureSession = [[AVCaptureSession alloc] init];
-    [mCaptureSession setSessionPreset:AVCaptureSessionPreset1280x720];
-    
-    AVCaptureDevice *sDevice = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-    
-    [sDevice setActiveVideoMinFrameDuration:CMTimeMake(1, kDefaultFrameRate)];
-    [sDevice setActiveVideoMaxFrameDuration:CMTimeMake(1, kDefaultFrameRate)];
-    
-    NSError *sError = nil;
-    AVCaptureDeviceInput *sInput = [AVCaptureDeviceInput deviceInputWithDevice:sDevice error:&sError];
-    
-    if (!sInput)
-    {
-        NSLog(@"create device input error!!");
+    [[SKQueueDispatcher sharedDispatcher] runAsynchronouslyOnGLRenderingQueue:^{
+        mContext = aEAGLContext;
+        mShouldUpdateFrameBuffer = YES;
+        mIsStarted = NO;
+        mLayer = aLayer;
         
-        return;
-    }
-    
-    [mCaptureSession addInput:sInput];
-    
-    AVCaptureVideoDataOutput *sOutput = [[AVCaptureVideoDataOutput alloc] init];
-    [mCaptureSession addOutput:sOutput];
-    [sOutput setVideoSettings:@{ (NSString *)kCVPixelBufferPixelFormatTypeKey : @(kCVPixelFormatType_32BGRA) }];
-    
-    dispatch_queue_t sQueue = dispatch_queue_create(kCaptureVideoSessionQueueIdentifier, NULL);
-    [sOutput setSampleBufferDelegate:self queue:sQueue];
+        NSString* bundlePath = [[[NSBundle mainBundle] bundlePath] stringByAppendingString:@"/"];
+        FileSystem::setResourcePath([bundlePath fileSystemRepresentation]);
+    }];
+}
+
+- (void)setMainTextureWithPath:(char *)aPath
+{
+    [[SKQueueDispatcher sharedDispatcher] runAsynchronouslyOnGLRenderingQueue:^{
+        mMainTexturePath = aPath;
+    }];
+}
+
+- (void)render
+{
+    [[SKQueueDispatcher sharedDispatcher] runAsynchronouslyOnGLRenderingQueue:^{
+        if (mIsStarted && CustomRenderingEngine::getInstance()->getState() != Game::State::RUNNING)
+        {
+            return;
+        }
+        
+        [EAGLContext setCurrentContext:mContext];
+        
+        if (mShouldUpdateFrameBuffer)
+        {
+            mShouldUpdateFrameBuffer = NO;
+            
+            CustomRenderingEngine::getInstance()->deleteFramebuffer();
+            CustomRenderingEngine::getInstance()->createFrameAndColorRenderbuffer();
+            
+            [mContext renderbufferStorage:GL_RENDERBUFFER fromDrawable:mLayer];
+            
+            CustomRenderingEngine::getInstance()->attachColorAndDepthBuffer();
+        }
+        
+        if (!mShouldUpdateFrameBuffer && !mIsStarted)
+        {
+            mIsStarted = YES;
+            
+            CustomRenderingEngine::getInstance()->run();
+            CustomRenderingEngine::getInstance()->initKuruScene();
+            
+            [self addMainTextureNode];
+            
+            return;
+        }
+        
+        CustomRenderingEngine::getInstance()->bindFramebuffer();
+        CustomRenderingEngine::getInstance()->applyViewport();
+        CustomRenderingEngine::getInstance()->frame();
+        CustomRenderingEngine::getInstance()->bindColorRenderbuffer();
+        
+        [mContext presentRenderbuffer:GL_RENDERBUFFER];
+    }];
 }
 
 
-- (void)requestRecording
+- (void)resumeEngine
 {
-    [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL aGranted) {
-        if (aGranted)
-        {
-            //Granted access to mediaType
-            [mCaptureSession startRunning];
-        }
-        else
-        {
-            NSLog(@"not granted for camera");
-        }
+    [[SKQueueDispatcher sharedDispatcher] runAsynchronouslyOnGLRenderingQueue:^{
+        CustomRenderingEngine::getInstance()->resume();
     }];
 }
 
 
 - (void)pauseEngine
 {
-    RenderingEngine *sEngine = RenderingEngine::getInstance();
-    
-    if(sEngine->isRunning())
-    {
-        sEngine->pause();
-    }
+    [[SKQueueDispatcher sharedDispatcher] runAsynchronouslyOnGLRenderingQueue:^{
+        CustomRenderingEngine::getInstance()->pause();
+    }];
 }
 
-
-- (void)resumeEngine
-{
-    RenderingEngine *sEngine = RenderingEngine::getInstance();
-    
-    if (sEngine->isPause())
-    {
-        sEngine->resume();
-    }
-}
-
-
-- (SKRenderingState)renderingState
-{
-    RenderingEngine *sEngine = RenderingEngine::getInstance();
-    RenderingEngine::State sState = sEngine->getState();
-    
-    return (SKRenderingState)sState;
-}
-
-
-#pragma mark - AVCaptureVideoDataOutputSampleBufferDelegate
-
-
-- (void)captureOutput:(AVCaptureOutput *)aCaptureOutput didOutputSampleBuffer:(CMSampleBufferRef)aSampleBuffer fromConnection:(AVCaptureConnection *)aConnection
-{
-     [EAGLContext setCurrentContext:mContext];
-    NSLog(@"aaaa");
-    
-    CMTime sCurrentTime = CMSampleBufferGetPresentationTimeStamp(aSampleBuffer);
-    CVPixelBufferRef sCVPixelBufferRef = CMSampleBufferGetImageBuffer(aSampleBuffer);
-    
-    CFRetain(aSampleBuffer);
-//    [[SKQueueDispatcher sharedDispatcher] runAsynchronouslyOnGLRenderingQueue:^{
-        RenderingEngine *sEngine = RenderingEngine::getInstance();
-        sEngine->processPrevRendering(mViewWidth, mViewHeight);
-
-        RenderingEngine::getInstance()->frame();
-
-        [self makeTextureFrom:sCVPixelBufferRef withCurrentTime:sCurrentTime];
-//        [mContext presentRenderbuffer:GL_RENDERBUFFER];
-        CFRelease(aSampleBuffer);
-//    }];
-}
 
 #pragma mark - privates
 
-
-- (void)startGame
+- (void)addMainTextureNode
 {
-    
-}
-
-
-- (void)makeTextureFrom:(CVPixelBufferRef)aPixelBufferRef withCurrentTime:(CMTime)aCurrentTime
-{
-    CVReturn sErr;
-    CVOpenGLESTextureRef sRGBTextureRef = NULL;
-    
-    CVPixelBufferLockBaseAddress(aPixelBufferRef, 0);
-    
-    int sPixelBufferWidth = (int)CVPixelBufferGetWidth(aPixelBufferRef);
-    int sPixelBufferHeight = (int)CVPixelBufferGetHeight(aPixelBufferRef);
-    
-    sErr = CVOpenGLESTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
-                                                       [[SKRenderingCacheStorage sharedRenderingCacheStorage] coreVideoTextureCacheRef],
-                                                       aPixelBufferRef, NULL, GL_TEXTURE_2D, GL_RGBA,
-                                                       sPixelBufferWidth,
-                                                       sPixelBufferHeight, GL_BGRA, GL_UNSIGNED_BYTE, 0, &sRGBTextureRef);
-    
-    CVPixelBufferUnlockBaseAddress(aPixelBufferRef, 0);
-    
-    if (sErr != kCVReturnSuccess || !sRGBTextureRef)
+    if (mMainTexturePath == NULL)
     {
-        NSLog(@"Error at CVOpenGLESTextureCacheCreateTextureFromImage %d", sErr);
-        NSLog(@"--------------------- error --------------------------");
-
         return;
     }
     
-    GLuint sCoreVideoTexture;
-    sCoreVideoTexture = CVOpenGLESTextureGetName(sRGBTextureRef);
-    glBindTexture(CVOpenGLESTextureGetTarget(sRGBTextureRef), sCoreVideoTexture);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    Node *sNode = CustomRenderingEngine::getInstance()->addCameraFullScreenQuadModelAndNode();
+    
+    [self setTextureUnlitMaterial:dynamic_cast<Model*>(sNode->getDrawable()) texturePath:mMainTexturePath generateMipmaps:NO];
+}
 
-    [[SKRenderingCacheStorage sharedRenderingCacheStorage] setCoreVideoTexture:sCoreVideoTexture];
+- (void)setTextureUnlitMaterial:(Model *)aModel texturePath:(char *)aTexturePath generateMipmaps:(BOOL)aMipmaps
+{
+    Material* sMaterial = aModel->setMaterial("res/shaders/textured.vert", "res/shaders/textured.frag");
+    sMaterial->setParameterAutoBinding("u_worldViewProjectionMatrix", "WORLD_VIEW_PROJECTION_MATRIX");
+    
+    // Load the texture from file.
+    Texture::Sampler* sampler = sMaterial->getParameter("u_diffuseTexture")->setValue(aTexturePath, aMipmaps);
+    
+    if (aMipmaps)
+    {
+        sampler->setFilterMode(Texture::LINEAR_MIPMAP_LINEAR, Texture::LINEAR);
+    }
+    else
+    {
+        sampler->setFilterMode(Texture::LINEAR, Texture::LINEAR);
+        sampler->setWrapMode(Texture::CLAMP, Texture::CLAMP);
+        sMaterial->getStateBlock()->setCullFace(true);
+        sMaterial->getStateBlock()->setDepthTest(false);
+        sMaterial->getStateBlock()->setDepthWrite(false);
+    }
 }
 
 @end

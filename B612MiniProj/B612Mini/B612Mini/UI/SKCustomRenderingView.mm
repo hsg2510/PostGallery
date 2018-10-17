@@ -7,7 +7,7 @@
 //
 
 #import "SKCustomRenderingView.h"
-#import "SKCustomAppEngine.h"
+#import "SKAppEngine.h"
 
 #import <GLKit/GLKit.h>
 #import <OpenGLES/ES2/gl.h>
@@ -51,10 +51,8 @@
         
         mUpdating = NO;
         
-        [[SKCustomAppEngine sharedAppEngine] initWithContext:sContext EAGLLayer:sLayer];
-        
-//        mDisplayLink = [CADisplayLink displayLinkWithTarget:self selector:@selector(drawView:)];
-//        [mDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
+        [[SKAppEngine sharedAppEngine] initWithContext:sContext EAGLLayer:sLayer];
+        [[SKAppEngine sharedAppEngine] setMainTextureWithPath:(char *)"res/png/two_people.png"];
     }
     
     return self;
@@ -77,9 +75,9 @@
         [mDisplayLink setPreferredFramesPerSecond:30];
         [mDisplayLink addToRunLoop:[NSRunLoop currentRunLoop] forMode:NSDefaultRunLoopMode];
         
-        if ([[SKCustomAppEngine sharedAppEngine] isStarted])
+        if ([[SKAppEngine sharedAppEngine] isStarted])
         {
-            [[SKCustomAppEngine sharedAppEngine] resumeEngine];
+            [[SKAppEngine sharedAppEngine] resumeEngine];
         }
     }
 }
@@ -89,9 +87,9 @@
 {
     if (mUpdating)
     {
-        if ([[SKCustomAppEngine sharedAppEngine] isStarted])
+        if ([[SKAppEngine sharedAppEngine] isStarted])
         {
-            [[SKCustomAppEngine sharedAppEngine] pauseEngine];
+            [[SKAppEngine sharedAppEngine] pauseEngine];
         }
         
         [mDisplayLink invalidate];
@@ -106,7 +104,7 @@
 
 - (void)drawView:(CADisplayLink *)CADisplayLink
 {
-    [[SKCustomAppEngine sharedAppEngine] render];
+    [[SKAppEngine sharedAppEngine] render];
 }
 
 
